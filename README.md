@@ -1,34 +1,85 @@
 # 🛡️ Cybersecurity Log Analyzer
 
-A Python-based cybersecurity monitoring project designed to analyze authentication logs, detect suspicious login activity, assess IP address risk, and manage security alerts through an interactive SOC dashboard.
+**A Python-Based Security Monitoring & Threat Detection System**
 
-This project was developed as a hands-on learning experience focused on **Python programming, defensive cybersecurity, log analysis, and security monitoring**.
+A cybersecurity project built with Python, Streamlit, and SQLite to analyze authentication logs, detect suspicious login attempts, assess IP address risks, and manage security alerts through an interactive Security Operations Center (SOC) dashboard.
 
-## 📸 SOC Dashboard
+Developed as a personal hands-on cybersecurity project to practice defensive security, Python programming, log analysis, and security monitoring.
+
+## 🚀 Live Demo
+
+**Try the Cybersecurity SOC Dashboard directly in your browser:**
+
+### 🌐 [Launch Live SOC Dashboard](https://y7aseer-cybersecurity.streamlit.app/)
+
+No installation required.
+
+**GitHub Repository:** [Cybersecurity Log Analyzer](https://github.com/y7aseer/cybersecurity-log-analyzer)
+
+## 📸 Dashboard Preview
 
 ![Cybersecurity SOC Dashboard](screenshots/dashboard.png)
 
-## 🚀 Features
+## ✨ Key Features
 
-- **Security Log Analysis:** Parses authentication logs and identifies failed login attempts.
-- **Brute Force Detection:** Detects repeated failed login attempts within a configurable time window.
-- **IP Risk Assessment:** Assigns behavior-based risk levels and scores to suspicious IP addresses.
-- **Interactive SOC Dashboard:** Visualizes security events using Streamlit.
-- **Automatic Monitoring:** Supports configurable refresh intervals of 5, 10, 30, and 60 seconds.
-- **Security Alerts:** Displays suspicious activity requiring investigation.
-- **Alert Acknowledgement:** Allows an analyst to mark alerts as reviewed.
-- **SQLite Database:** Stores security alerts and acknowledgement status persistently.
-- **Security Reports:** Exports alert reports in JSON and risk assessment data in CSV.
-- **Automated Testing:** Includes 21 unit tests.
+### 🔍 Security Log Analysis
+- Reads and processes authentication log files.
+- Extracts timestamps, login status, and IP addresses.
+- Identifies failed login attempts and suspicious activity.
 
-## 🛠️ Technologies
+### 🚨 Brute Force Attack Detection
+- Detects repeated failed login attempts from the same IP address.
+- Uses time-window-based detection logic.
+- Generates alerts for suspicious authentication patterns.
 
-- Python
-- Streamlit
-- Pandas
-- SQLite
-- Git & GitHub
-- Python unittest
+### 🧠 IP Risk Assessment
+- Evaluates suspicious IP addresses using behavioral indicators.
+- Assigns risk scores and severity levels.
+- Helps prioritize potentially malicious activity.
+
+### 📊 Interactive SOC Dashboard
+- Built using Streamlit.
+- Displays security monitoring metrics and visualizations.
+- Supports uploading and analyzing log files.
+- Provides IP filtering and security event analysis.
+
+### 🔄 Automatic Monitoring
+- Supports automatic refresh intervals of 5, 10, 30, and 60 seconds.
+- Allows monitoring to be paused.
+- Updates dashboard information as new log activity is processed.
+
+### 🛡️ Security Alert Management
+- Displays detected security alerts.
+- Tracks new and acknowledged alerts.
+- Allows analysts to acknowledge reviewed alerts.
+- Provides a persistent alert history using SQLite.
+
+### 💾 SQLite Database Integration
+- Stores detected security alerts in a local SQLite database.
+- Tracks alert status and acknowledgement timestamps.
+- Prevents duplicate alert records.
+- Preserves alert status across local application restarts.
+
+### 📁 Report Export
+- Exports security alerts in JSON format.
+- Exports IP risk assessment results in CSV format.
+- Supports further analysis and reporting.
+
+### 🧪 Automated Testing
+- Includes 21 unit tests.
+- Uses Python's built-in `unittest` framework.
+
+## 🛠️ Technologies Used
+
+| Technology | Purpose |
+|---|---|
+| Python | Core application and security analysis |
+| Streamlit | Interactive SOC dashboard |
+| Pandas | Data processing and reporting |
+| SQLite | Security alert storage |
+| Unittest | Automated testing |
+| Git & GitHub | Version control and project hosting |
+| Streamlit Community Cloud | Live application deployment |
 
 ## 📂 Project Structure
 
@@ -41,95 +92,132 @@ cybersecurity-log-analyzer/
 ├── dashboard.py
 ├── database.py
 ├── security.log
+├── requirements.txt
+├── README.md
 ├── screenshots/
 │   └── dashboard.png
-├── README.md
 └── ...
 ```
 
-## ⚙️ Installation
+### Main Components
 
-**1. Clone the repository**
+- **main.py:** Reads and analyzes security logs.
+- **detector.py:** Detects potential brute-force attacks.
+- **threat_intelligence.py:** Calculates behavior-based IP risk scores.
+- **report_export.py:** Generates JSON and CSV reports.
+- **dashboard.py:** Provides the interactive SOC monitoring interface.
+- **database.py:** Manages SQLite security alerts and acknowledgement status.
+
+## ⚙️ Installation & Setup
+
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/y7aseer/cybersecurity-log-analyzer.git
 cd cybersecurity-log-analyzer
 ```
 
-**2. Install dependencies**
+### 2. Install Dependencies
+
+Make sure Python is installed, then run:
 
 ```bash
-python -m pip install streamlit pandas
+python -m pip install -r requirements.txt
 ```
 
-**3. Launch the SOC Dashboard**
+### 3. Run the SOC Dashboard
 
 ```bash
 python -m streamlit run dashboard.py
 ```
 
-The dashboard will open in your browser.
-
-## 🔍 Example Security Log
-
-The analyzer supports log entries formatted as follows:
+The dashboard will be available locally at:
 
 ```text
-2026-10-08 15:00:00 | FAILED | 192.168.1.200
-2026-10-08 15:00:10 | FAILED | 192.168.1.200
-2026-10-08 15:00:20 | FAILED | 192.168.1.200
+http://localhost:8501
 ```
 
-Repeated failed login attempts within a short time window can trigger a potential brute-force alert.
+Alternatively, use the [Live Demo](https://y7aseer-cybersecurity.streamlit.app/) without installing anything.
 
-## 🚨 Security Alert Workflow
+## 🔎 Example Security Logs
 
-1. Read authentication log entries.
-2. Identify failed login attempts.
-3. Analyze suspicious patterns.
-4. Generate security alerts.
-5. Store detected alerts in SQLite.
-6. Display alerts in the SOC dashboard.
-7. Allow the analyst to acknowledge reviewed alerts.
-8. Preserve alert status after restarting the application.
+The application processes authentication logs using the following format:
 
-## 🧪 Running Tests
+```text
+2026-10-08 15:00:00 | FAILED | 192.168.1.100
+2026-10-08 15:00:10 | FAILED | 192.168.1.100
+2026-10-08 15:00:20 | FAILED | 192.168.1.100
+2026-10-08 15:01:00 | FAILED | 192.168.1.200
+```
 
-Run the automated test suite:
+Multiple failed login attempts from the same IP address within a short period can indicate a potential brute-force attack.
+
+## 🚨 Security Monitoring Workflow
+
+1. Load authentication logs.
+2. Parse timestamps, login status, and IP addresses.
+3. Identify failed authentication attempts.
+4. Detect suspicious login patterns.
+5. Assess IP address risk levels.
+6. Generate security alerts.
+7. Store alerts in SQLite.
+8. Display alerts in the SOC dashboard.
+9. Acknowledge reviewed alerts.
+10. Export security reports when needed.
+
+## 🧪 Running Unit Tests
+
+Run the automated test suite using:
 
 ```bash
 python -m unittest discover -v
 ```
 
-The project includes 21 unit tests covering its core security analysis functionality.
+The project includes 21 unit tests for its core analysis functionality.
 
-## 🔐 Security Notes
+## ☁️ Cloud Deployment
 
-This project is intended for educational and defensive cybersecurity purposes.
+The SOC dashboard is deployed using **Streamlit Community Cloud**.
 
-- The detection system uses log-based rules and behavioral heuristics.
-- IP risk scores are estimates, not verified external threat intelligence.
-- The dashboard monitors supported local or uploaded log data rather than collecting live network traffic.
-- SQLite data is stored locally.
-- The project is not intended to replace a production SIEM platform.
+**Live Application:**
 
-## 🎯 Learning Objectives
+https://y7aseer-cybersecurity.streamlit.app/
 
-This project demonstrates practical experience with:
+The cloud-hosted application is intended for demonstration and educational use.
 
-- Python software development
-- Authentication log analysis
+**Important:** SQLite storage on Streamlit Community Cloud is not guaranteed to persist after application restarts or redeployments. Visitors may also share the same alert database. Use synthetic security logs only and avoid uploading sensitive production data.
+
+## 🔐 Security Considerations
+
+- This project is designed for educational and defensive cybersecurity purposes.
+- Detection is based on authentication log patterns and predefined rules.
+- IP risk scores are behavior-based estimates, not verified external threat intelligence.
+- The application is not a production SIEM system.
+- The dashboard does not perform live network packet capture.
+- Security logs used for public demonstrations should contain synthetic data only.
+
+## 🎯 Skills Demonstrated
+
+- Python programming
+- Cybersecurity log analysis
 - Brute-force attack detection
-- Defensive security monitoring
-- Alert investigation workflows
-- Database integration
+- Threat detection fundamentals
+- Security monitoring and alert management
+- SOC dashboard development
+- SQLite database integration
 - Data visualization
-- Automated software testing
+- Automated testing
+- Git and GitHub
+- Cloud application deployment
 
 ## 👨‍💻 Author
 
-Developed by [y7aseer](https://github.com/y7aseer) as a personal cybersecurity learning project.
+**GitHub:** [@y7aseer](https://github.com/y7aseer)
 
-## 📄 License
+**Project:** [Cybersecurity Log Analyzer](https://github.com/y7aseer/cybersecurity-log-analyzer)
 
-No license has been specified for this repository.
+**Live Demo:** [Cybersecurity SOC Dashboard](https://y7aseer-cybersecurity.streamlit.app/)
+
+---
+
+*Developed as a personal cybersecurity learning project to strengthen practical skills in Python development, defensive security, and security operations.*
