@@ -1,5 +1,4 @@
 
-import json
 import tempfile
 from pathlib import Path
 
@@ -8,6 +7,7 @@ import streamlit as st
 
 from main import read_security_logs, analyze_logs
 from threat_intelligence import assess_ip_risk
+from report_export import export_alerts_json, export_risk_csv
 
 
 BASE_DIR = Path(__file__).parent
@@ -181,7 +181,7 @@ else:
 
 st.caption(
     "Risk scores are behavior-based estimates, "
-    "not external threat reputation scores."
+    "not external threat intelligence reputation scores."
 )
 
 st.divider()
@@ -200,27 +200,21 @@ st.subheader("📥 Export Security Reports")
 
 col_json, col_csv = st.columns(2)
 
-report_json = json.dumps(
-    filtered_alerts,
-    indent=4,
-    ensure_ascii=False
-)
-
 with col_json:
     st.download_button(
         label="📄 Download JSON Report",
-        data=report_json,
+        data=export_alerts_json(filtered_alerts),
         file_name="security_report.json",
         mime="application/json",
         use_container_width=True
     )
 
 with col_csv:
-    csv_data = risk_df.to_csv(index=False)
-
     st.download_button(
         label="📊 Download CSV Risk Report",
-        data=csv_data,
+        data=export_risk_csv(
+            risk_df.to_dict(orient="records")
+        ),
         file_name="security_risk_report.csv",
         mime="text/csv",
         use_container_width=True
