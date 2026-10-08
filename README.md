@@ -1,8 +1,8 @@
 # 🛡️ Cybersecurity Log Analyzer
 
-**Python-Based Security Monitoring & Threat Detection System**
+### Python-Based Security Monitoring & Threat Detection System
 
-A cybersecurity project built with Python and Streamlit to analyze authentication logs, detect potential brute-force attacks, assess IP risk levels, and visualize security events through an interactive Security Operations Center (SOC) dashboard.
+A cybersecurity project developed using **Python and Streamlit** to analyze authentication logs, detect potential brute-force attacks, assess IP address risk levels, and visualize suspicious activity through an interactive Security Operations Center (SOC) dashboard.
 
 ## 📸 Dashboard Preview
 
@@ -11,15 +11,15 @@ A cybersecurity project built with Python and Streamlit to analyze authenticatio
 ## 🚀 Features
 
 - **Security Log Analysis:** Parse authentication logs and identify failed login attempts.
-- **Brute-Force Detection:** Detect suspicious repeated login failures within a configurable time window.
-- **IP Risk Scoring:** Classify IP addresses as LOW, MEDIUM, or HIGH risk based on authentication failure patterns.
-- **Interactive SOC Dashboard:** Monitor login statistics, suspicious IP addresses, and security alerts.
-- **Failed Login Timeline:** Visualize failed authentication attempts over time.
-- **IP Address Filtering:** Investigate individual IP addresses using interactive filters.
-- **Log File Upload:** Upload and analyze `.log` and `.txt` files.
-- **JSON Report Export:** Download detected security alerts.
-- **CSV Risk Report Export:** Export IP risk assessments for analysis in Excel.
-- **Automated Unit Testing:** Validate core functionality using Python's unittest framework.
+- **Brute-Force Attack Detection:** Identify repeated failed login attempts within a specified time window.
+- **IP Risk Assessment:** Assign risk levels and scores based on suspicious login behavior.
+- **Interactive SOC Dashboard:** Display security metrics, charts, alerts, and risk assessments.
+- **Failed Login Timeline:** Visualize authentication failures over time.
+- **IP Address Filtering:** Investigate security activity for specific IP addresses.
+- **Log File Upload:** Analyze custom `.log` and `.txt` files.
+- **JSON Report Export:** Download detected security alerts in JSON format.
+- **CSV Report Export:** Download IP risk assessments in CSV format.
+- **Automated Testing:** Validate the analyzer with 21 unit tests.
 
 ## 🛠️ Technologies Used
 
@@ -28,7 +28,7 @@ A cybersecurity project built with Python and Streamlit to analyze authenticatio
 - Pandas
 - Git & GitHub
 - JSON & CSV
-- unittest
+- Python unittest
 
 ## 📂 Project Structure
 
@@ -54,44 +54,46 @@ cybersecurity-log-analyzer/
 
 ## ⚙️ Installation
 
-**1. Clone the repository**
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/y7aseer/cybersecurity-log-analyzer.git
 cd cybersecurity-log-analyzer
 ```
 
-**2. Install dependencies**
+### 2. Install Dependencies
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-## ▶️ Run the Dashboard
+## ▶️ Run the SOC Dashboard
 
-Start the Streamlit application:
+Start the Streamlit dashboard:
 
 ```bash
 python -m streamlit run dashboard.py
 ```
 
-Open the local address shown in the terminal, usually:
+Open the local URL displayed in your terminal:
 
 http://localhost:8501
 
+The dashboard provides an interactive interface for investigating authentication failures, security alerts, and IP risk levels.
+
 ## 🔍 Run the Log Analyzer
 
-To analyze the default log file from the command line:
+Run the command-line analyzer:
 
 ```bash
 python main.py
 ```
 
-The analyzer reads `security.log`, detects suspicious login patterns, and generates `security_report.json`.
+The analyzer reads `security.log`, processes failed login attempts, detects potential brute-force attacks, and generates a JSON security report.
 
-## 🧪 Automated Tests
+## 🧪 Automated Unit Tests
 
-Run all unit tests:
+Run all tests using:
 
 ```bash
 python -m unittest discover -v
@@ -99,16 +101,16 @@ python -m unittest discover -v
 
 The project includes **21 unit tests** covering:
 
-- Brute-force detection
+- Brute-force attack detection
 - Security log parsing
-- Invalid log handling
+- Log validation
 - IP risk assessment
-- JSON report generation
-- CSV report generation
+- JSON report export
+- CSV report export
 
 ## 📝 Supported Log Format
 
-The analyzer expects log entries in this format:
+Example authentication log entries:
 
 ```text
 2026-10-08 10:00:00 | FAILED | 192.168.1.10
@@ -117,55 +119,76 @@ The analyzer expects log entries in this format:
 2026-10-08 10:02:00 | SUCCESS | 10.0.0.5
 ```
 
-Each entry contains a timestamp, authentication status, and IP address.
+Each log entry contains a timestamp, authentication status, and IP address.
 
-## 🚨 Brute-Force Detection
+## 🚨 Brute-Force Detection Logic
 
-The detection algorithm uses a sliding time window to identify repeated authentication failures.
+The system uses a sliding time window to detect suspicious repeated login failures.
 
-Default detection settings:
+**Default detection configuration:**
 
-- **Threshold:** 3 failed login attempts
-- **Time Window:** 60 seconds
-- **Detection:** Potential brute-force activity from the same IP address
+- Failed login threshold: 3 attempts
+- Detection time window: 60 seconds
+- Detection scope: Individual IP addresses
 
-## 🧠 IP Risk Assessment
+If an IP address generates at least three failed login attempts within 60 seconds, the system generates a potential brute-force alert.
 
-IP addresses are assigned heuristic risk scores based on failed login activity.
+## 🧠 IP Risk Scoring
+
+The system evaluates IP risk based on failed login behavior.
 
 | Risk Level | Description |
 |---|---|
-| LOW | One or two failed login attempts |
-| MEDIUM | Three or four failed attempts without rapid-attack detection |
-| HIGH | Five or more failed attempts, or detected rapid repeated failures |
+| LOW | 1–2 failed login attempts |
+| MEDIUM | 3–4 failed attempts without rapid-attack detection |
+| HIGH | 5 or more failed attempts, or rapid repeated failures |
 
-Risk scores are behavior-based estimates, not external IP reputation intelligence or definitive evidence of an attack.
+Risk scores are heuristic behavioral estimates and do not represent external threat intelligence reputation scores.
 
-## 📊 Security Reports
+## 📊 Security Report Export
 
-The application supports two report formats:
+### JSON Security Report
 
-**JSON Report**
+Includes information such as:
 
-Contains detected security alerts, suspicious IP addresses, timestamps, and severity levels.
+- Suspicious IP address
+- Attack type
+- Number of failed attempts
+- First and last detected attempts
+- Severity level
 
-**CSV Risk Report**
+### CSV Risk Assessment Report
 
-Contains IP addresses, failed attempt counts, risk levels, risk scores, and assessment reasons.
+Includes:
+
+- IP Address
+- Failed Attempts
+- Risk Level
+- Risk Score
+- Assessment Reason
 
 ## 🔐 Security Considerations
 
-This project is designed for educational and defensive cybersecurity analysis.
+This project is intended for educational and defensive cybersecurity purposes.
 
-- Use synthetic or appropriately sanitized log files.
-- Avoid uploading sensitive production logs.
-- The current dashboard is intended for local use and demonstration.
-- Detection alerts require further investigation before confirming malicious activity.
+Use synthetic or sanitized authentication logs. The dashboard is designed for local analysis and demonstration, not production security monitoring.
+
+Detection alerts indicate potentially suspicious behavior and should be investigated before confirming an attack.
 
 ## 🔮 Future Improvements
 
-- Support additional log formats
-- Configurable detection thresholds
-- Enhanced log validation
-- Automated dashboard testing
-- Improved security event
+- Additional security log formats
+- Configurable detection rules
+- Enhanced alert investigation
+- Automated dashboard tests
+- More advanced security visualizations
+
+## 👨‍💻 Author
+
+**GitHub:** [@y7aseer](https://github.com/y7aseer)
+
+**Repository:** [Cybersecurity Log Analyzer](https://github.com/y7aseer/cybersecurity-log-analyzer)
+
+---
+
+⭐ *Built with Python and Streamlit as a cybersecurity portfolio project.*
