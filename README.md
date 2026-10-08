@@ -1,33 +1,33 @@
 # 🛡️ Cybersecurity Log Analyzer
 
-### Python-Based Security Monitoring & Threat Detection System
+A Python-based cybersecurity monitoring project designed to analyze authentication logs, detect suspicious login activity, assess IP address risk, and manage security alerts through an interactive SOC dashboard.
 
-A cybersecurity project developed using **Python and Streamlit** to analyze authentication logs, detect potential brute-force attacks, assess IP address risk levels, and visualize suspicious activity through an interactive Security Operations Center (SOC) dashboard.
+This project was developed as a hands-on learning experience focused on **Python programming, defensive cybersecurity, log analysis, and security monitoring**.
 
-## 📸 Dashboard Preview
+## 📸 SOC Dashboard
 
 ![Cybersecurity SOC Dashboard](screenshots/dashboard.png)
 
 ## 🚀 Features
 
-- **Security Log Analysis:** Parse authentication logs and identify failed login attempts.
-- **Brute-Force Attack Detection:** Identify repeated failed login attempts within a specified time window.
-- **IP Risk Assessment:** Assign risk levels and scores based on suspicious login behavior.
-- **Interactive SOC Dashboard:** Display security metrics, charts, alerts, and risk assessments.
-- **Failed Login Timeline:** Visualize authentication failures over time.
-- **IP Address Filtering:** Investigate security activity for specific IP addresses.
-- **Log File Upload:** Analyze custom `.log` and `.txt` files.
-- **JSON Report Export:** Download detected security alerts in JSON format.
-- **CSV Report Export:** Download IP risk assessments in CSV format.
-- **Automated Testing:** Validate the analyzer with 21 unit tests.
+- **Security Log Analysis:** Parses authentication logs and identifies failed login attempts.
+- **Brute Force Detection:** Detects repeated failed login attempts within a configurable time window.
+- **IP Risk Assessment:** Assigns behavior-based risk levels and scores to suspicious IP addresses.
+- **Interactive SOC Dashboard:** Visualizes security events using Streamlit.
+- **Automatic Monitoring:** Supports configurable refresh intervals of 5, 10, 30, and 60 seconds.
+- **Security Alerts:** Displays suspicious activity requiring investigation.
+- **Alert Acknowledgement:** Allows an analyst to mark alerts as reviewed.
+- **SQLite Database:** Stores security alerts and acknowledgement status persistently.
+- **Security Reports:** Exports alert reports in JSON and risk assessment data in CSV.
+- **Automated Testing:** Includes 21 unit tests.
 
-## 🛠️ Technologies Used
+## 🛠️ Technologies
 
-- Python 3
+- Python
 - Streamlit
 - Pandas
+- SQLite
 - Git & GitHub
-- JSON & CSV
 - Python unittest
 
 ## 📂 Project Structure
@@ -36,159 +36,100 @@ A cybersecurity project developed using **Python and Streamlit** to analyze auth
 cybersecurity-log-analyzer/
 ├── main.py
 ├── detector.py
-├── dashboard.py
 ├── threat_intelligence.py
 ├── report_export.py
+├── dashboard.py
+├── database.py
 ├── security.log
-├── security_report.json
-├── test_detector.py
-├── test_main.py
-├── test_threat_intelligence.py
-├── test_report_export.py
-├── requirements.txt
+├── screenshots/
+│   └── dashboard.png
 ├── README.md
-├── .gitignore
-└── screenshots/
-    └── dashboard.png
+└── ...
 ```
 
 ## ⚙️ Installation
 
-### 1. Clone the Repository
+**1. Clone the repository**
 
 ```bash
 git clone https://github.com/y7aseer/cybersecurity-log-analyzer.git
 cd cybersecurity-log-analyzer
 ```
 
-### 2. Install Dependencies
+**2. Install dependencies**
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install streamlit pandas
 ```
 
-## ▶️ Run the SOC Dashboard
-
-Start the Streamlit dashboard:
+**3. Launch the SOC Dashboard**
 
 ```bash
 python -m streamlit run dashboard.py
 ```
 
-Open the local URL displayed in your terminal:
+The dashboard will open in your browser.
 
-http://localhost:8501
+## 🔍 Example Security Log
 
-The dashboard provides an interactive interface for investigating authentication failures, security alerts, and IP risk levels.
+The analyzer supports log entries formatted as follows:
 
-## 🔍 Run the Log Analyzer
-
-Run the command-line analyzer:
-
-```bash
-python main.py
+```text
+2026-10-08 15:00:00 | FAILED | 192.168.1.200
+2026-10-08 15:00:10 | FAILED | 192.168.1.200
+2026-10-08 15:00:20 | FAILED | 192.168.1.200
 ```
 
-The analyzer reads `security.log`, processes failed login attempts, detects potential brute-force attacks, and generates a JSON security report.
+Repeated failed login attempts within a short time window can trigger a potential brute-force alert.
 
-## 🧪 Automated Unit Tests
+## 🚨 Security Alert Workflow
 
-Run all tests using:
+1. Read authentication log entries.
+2. Identify failed login attempts.
+3. Analyze suspicious patterns.
+4. Generate security alerts.
+5. Store detected alerts in SQLite.
+6. Display alerts in the SOC dashboard.
+7. Allow the analyst to acknowledge reviewed alerts.
+8. Preserve alert status after restarting the application.
+
+## 🧪 Running Tests
+
+Run the automated test suite:
 
 ```bash
 python -m unittest discover -v
 ```
 
-The project includes **21 unit tests** covering:
+The project includes 21 unit tests covering its core security analysis functionality.
 
-- Brute-force attack detection
-- Security log parsing
-- Log validation
-- IP risk assessment
-- JSON report export
-- CSV report export
-
-## 📝 Supported Log Format
-
-Example authentication log entries:
-
-```text
-2026-10-08 10:00:00 | FAILED | 192.168.1.10
-2026-10-08 10:00:15 | FAILED | 192.168.1.10
-2026-10-08 10:00:30 | FAILED | 192.168.1.10
-2026-10-08 10:02:00 | SUCCESS | 10.0.0.5
-```
-
-Each log entry contains a timestamp, authentication status, and IP address.
-
-## 🚨 Brute-Force Detection Logic
-
-The system uses a sliding time window to detect suspicious repeated login failures.
-
-**Default detection configuration:**
-
-- Failed login threshold: 3 attempts
-- Detection time window: 60 seconds
-- Detection scope: Individual IP addresses
-
-If an IP address generates at least three failed login attempts within 60 seconds, the system generates a potential brute-force alert.
-
-## 🧠 IP Risk Scoring
-
-The system evaluates IP risk based on failed login behavior.
-
-| Risk Level | Description |
-|---|---|
-| LOW | 1–2 failed login attempts |
-| MEDIUM | 3–4 failed attempts without rapid-attack detection |
-| HIGH | 5 or more failed attempts, or rapid repeated failures |
-
-Risk scores are heuristic behavioral estimates and do not represent external threat intelligence reputation scores.
-
-## 📊 Security Report Export
-
-### JSON Security Report
-
-Includes information such as:
-
-- Suspicious IP address
-- Attack type
-- Number of failed attempts
-- First and last detected attempts
-- Severity level
-
-### CSV Risk Assessment Report
-
-Includes:
-
-- IP Address
-- Failed Attempts
-- Risk Level
-- Risk Score
-- Assessment Reason
-
-## 🔐 Security Considerations
+## 🔐 Security Notes
 
 This project is intended for educational and defensive cybersecurity purposes.
 
-Use synthetic or sanitized authentication logs. The dashboard is designed for local analysis and demonstration, not production security monitoring.
+- The detection system uses log-based rules and behavioral heuristics.
+- IP risk scores are estimates, not verified external threat intelligence.
+- The dashboard monitors supported local or uploaded log data rather than collecting live network traffic.
+- SQLite data is stored locally.
+- The project is not intended to replace a production SIEM platform.
 
-Detection alerts indicate potentially suspicious behavior and should be investigated before confirming an attack.
+## 🎯 Learning Objectives
 
-## 🔮 Future Improvements
+This project demonstrates practical experience with:
 
-- Additional security log formats
-- Configurable detection rules
-- Enhanced alert investigation
-- Automated dashboard tests
-- More advanced security visualizations
+- Python software development
+- Authentication log analysis
+- Brute-force attack detection
+- Defensive security monitoring
+- Alert investigation workflows
+- Database integration
+- Data visualization
+- Automated software testing
 
 ## 👨‍💻 Author
 
-**GitHub:** [@y7aseer](https://github.com/y7aseer)
+Developed by [y7aseer](https://github.com/y7aseer) as a personal cybersecurity learning project.
 
-**Repository:** [Cybersecurity Log Analyzer](https://github.com/y7aseer/cybersecurity-log-analyzer)
+## 📄 License
 
----
-
-⭐ *Built with Python and Streamlit as a cybersecurity portfolio project.*
+No license has been specified for this repository.

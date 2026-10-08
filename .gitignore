@@ -2,3 +2,12 @@
 __pycache__/
 *.pyc
 .env
+# Local SQLite database
+alerts.db
+alerts.db-journal
+alerts.db-wal
+alerts.db-shm
+
+# Python cache
+__pycache__/
+*.pyc
