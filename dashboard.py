@@ -155,8 +155,17 @@ for ip, timestamps in filtered_logins.items():
         "Reason": assessment["reason"]
     })
 
-if risk_data:
-    risk_df = pd.DataFrame(risk_data)
+risk_columns = [
+    "IP Address",
+    "Failed Attempts",
+    "Risk Level",
+    "Risk Score",
+    "Reason"
+]
+
+risk_df = pd.DataFrame(risk_data, columns=risk_columns)
+
+if not risk_df.empty:
     risk_df = risk_df.sort_values(
         "Risk Score",
         ascending=False
@@ -172,7 +181,7 @@ else:
 
 st.caption(
     "Risk scores are behavior-based estimates, "
-    "not external threat intelligence reputation scores."
+    "not external threat reputation scores."
 )
 
 st.divider()
@@ -187,7 +196,9 @@ else:
     st.success("No suspicious activity detected.")
 
 st.divider()
-st.subheader("📥 Export Security Report")
+st.subheader("📥 Export Security Reports")
+
+col_json, col_csv = st.columns(2)
 
 report_json = json.dumps(
     filtered_alerts,
@@ -195,12 +206,25 @@ report_json = json.dumps(
     ensure_ascii=False
 )
 
-st.download_button(
-    "Download JSON Report",
-    data=report_json,
-    file_name="security_report.json",
-    mime="application/json"
-)
+with col_json:
+    st.download_button(
+        label="📄 Download JSON Report",
+        data=report_json,
+        file_name="security_report.json",
+        mime="application/json",
+        use_container_width=True
+    )
+
+with col_csv:
+    csv_data = risk_df.to_csv(index=False)
+
+    st.download_button(
+        label="📊 Download CSV Risk Report",
+        data=csv_data,
+        file_name="security_risk_report.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
 
 st.divider()
 st.caption(
