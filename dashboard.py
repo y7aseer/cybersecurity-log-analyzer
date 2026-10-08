@@ -1,7 +1,7 @@
 
 import tempfile
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -15,7 +15,7 @@ from report_export import export_alerts_json, export_risk_csv
 # Configuration
 # ==========================================
 
-BASE_DIR = Path(__file__).parent
+BASE_DIR = Path(__file__).resolve().parent
 LOG_FILE = BASE_DIR / "security.log"
 
 st.set_page_config(
@@ -37,7 +37,7 @@ st.markdown(
     }
 
     div[data-testid="stMetric"] {
-        background: #172338;
+        background-color: #172338;
         border: 1px solid #263b55;
         border-radius: 12px;
         padding: 18px;
@@ -56,65 +56,116 @@ st.markdown(
 # Session State
 # ==========================================
 
-if "seen_alerts" not in st.session_state:
-    st.session_state.seen_alerts = set()
-
 if "alert_history" not in st.session_state:
-    st.session_state.alert_history = []
+    st.session_state.alert_history = {}
+
+if "monitoring_enabled" not in st.session_state:
+    st.session_state.monitoring_enabled = True
+
+if "refresh_seconds" not in st.session_state:
+    st.session_state.refresh_seconds = 5
 
 
 # ==========================================
 # Helper Functions
 # ==========================================
 
-def get_alert_id(alert):
-    """Create a stable identifier for a detected alert."""
-    return "|".join(
-        [
-            str(alert.get("ip_address", "")),
-            str(alert.get("attack_type", "")),
-            str(alert.get("first_attempt", "")),
-            str(alert.get("last_attempt", "")),
-            str(alert.get("failed_attempts", "")),
-        ]
-    )
+def get_alert_id(alert, source_id):
+    """
+    Create a unique ID for an alert in a log source.
+    """
+    parts = [
+        source_id,
+        str(alert.get("ip_address", "")),
+        str(alert.get("attack_type", "")),
+        str(alert.get("first_attempt", "")),
+        str(alert.get("last_attempt", "")),
+        str(alert.get("failed_attempts", "")),
+    ]
+
+    return "|".join(parts)
 
 
 def load_security_data(uploaded_file):
-    """Read either the uploaded log or the local log file."""
+    """
+    Read uploaded log or default local security.log.
+    """
     if uploaded_file is None:
         return read_security_logs(LOG_FILE)
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir) / "uploaded.log"
         temp_path.write_bytes(uploaded_file.getvalue())
+
         return read_security_logs(temp_path)
 
 
-def register_new_alerts(alerts):
-    """Track newly discovered alerts without duplicating history."""
-    new_alerts = []
+def register_alerts(alerts, source_id):
+    """
+    Register new alerts without overwriting their status.
+    """
+    new_alert_count = 0
 
     for alert in alerts:
-        alert_id = get_alert_id(alert)
+        alert_id = get_alert_id(alert, source_id)
 
-        if alert_id not in st.session_state.seen_alerts:
-            st.session_state.seen_alerts.add(alert_id)
-
-            history_entry = {
+        if alert_id not in st.session_state.alert_history:
+            st.session_state.alert_history[alert_id] = {
+                "ID": alert_id,
                 "Detected At": datetime.now().strftime(
                     "%Y-%m-%d %H:%M:%S"
                 ),
-                "IP Address": alert.get("ip_address"),
-                "Attack Type": alert.get("attack_type"),
-                "Failed Attempts": alert.get("failed_attempts"),
-                "Severity": alert.get("severity"),
+                "IP Address": alert.get("ip_address", "Unknown"),
+                "Attack Type": alert.get("attack_type", "Unknown"),
+                "Failed Attempts": alert.get("failed_attempts", 0),
+                "Severity": alert.get("severity", "Unknown"),
+                "Status": "New",
+                "Acknowledged At": "",
             }
 
-            st.session_state.alert_history.append(history_entry)
-            new_alerts.append(alert)
+            new_alert_count += 1
 
-    return new_alerts
+    return new_alert_count
+
+
+def acknowledge_alert(alert_id):
+    """
+    Mark an alert as reviewed by the analyst.
+    """
+    history = st.session_state.alert_history
+
+    if alert_id in history:
+        history[alert_id]["Status"] = "Acknowledged"
+        history[alert_id]["Acknowledged At"] = (
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        )
+
+
+def get_alert_dataframe():
+    """
+    Convert alert history into a DataFrame.
+    """
+    columns = [
+        "Detected At",
+        "IP Address",
+        "Attack Type",
+        "Failed Attempts",
+        "Severity",
+        "Status",
+        "Acknowledged At",
+    ]
+
+    records = list(st.session_state.alert_history.values())
+
+    if not records:
+        return pd.DataFrame(columns=columns)
+
+    dataframe = pd.DataFrame(records)
+
+    return dataframe[columns].sort_values(
+        "Detected At",
+        ascending=False,
+    )
 
 
 # ==========================================
@@ -122,8 +173,9 @@ def register_new_alerts(alerts):
 # ==========================================
 
 st.title("🛡️ Cybersecurity SOC Dashboard")
+
 st.caption(
-    "Security Monitoring | Threat Detection | Real-Time Alerts"
+    "Security Monitoring | Threat Detection | Alert Management"
 )
 
 st.sidebar.header("⚙️ Dashboard Controls")
@@ -136,27 +188,20 @@ uploaded_file = st.sidebar.file_uploader(
 
 monitoring_enabled = st.sidebar.toggle(
     "🔄 Automatic Monitoring",
-    value=True,
+    key="monitoring_enabled",
 )
 
 refresh_seconds = st.sidebar.selectbox(
-    "Refresh Interval",
+    "Refresh Interval (seconds)",
     options=[5, 10, 30, 60],
-    index=0,
-)
-
-sound_enabled = st.sidebar.toggle(
-    "🔊 Alert Sound",
-    value=False,
+    key="refresh_seconds",
 )
 
 if uploaded_file is not None:
     st.sidebar.info(
-        "Monitoring uploaded file content. "
-        "For continuously changing logs, use the local security.log."
+        "Uploaded files are static snapshots. "
+        "Use security.log for continuously changing data."
     )
-
-st.sidebar.divider()
 
 if monitoring_enabled:
     st.sidebar.success(
@@ -167,82 +212,131 @@ else:
 
 
 # ==========================================
-# Auto-Refreshing Dashboard
+# Monitoring Fragment
 # ==========================================
 
-@st.fragment(run_every=5)
+@st.fragment(run_every="5s")
 def security_monitor():
 
-    # Read data and analyze current events
-    try:
-        failed_logins = load_security_data(uploaded_file)
-    except (OSError, UnicodeError) as error:
-        st.error(f"Unable to read log file: {error}")
+    if monitoring_enabled:
+        try:
+            failed_logins = load_security_data(uploaded_file)
+        except (OSError, UnicodeError, ValueError) as error:
+            st.error(f"Unable to read security logs: {error}")
+            return
+
+        alerts = analyze_logs(failed_logins)
+
+        source_id = (
+            f"upload:{uploaded_file.name}"
+            if uploaded_file is not None
+            else "local:security.log"
+        )
+
+        register_alerts(alerts, source_id)
+
+        st.success("🟢 Security monitoring is active.")
+
+    else:
+        st.warning(
+            "🟡 Monitoring is paused. "
+            "Resume monitoring to refresh security data."
+        )
         return
 
-    alerts = analyze_logs(failed_logins)
-
-    # Register alerts only while monitoring is enabled
-    if monitoring_enabled:
-        new_alerts = register_new_alerts(alerts)
-    else:
-        new_alerts = []
-
-    # ======================================
-    # Monitoring Status
-    # ======================================
-
-    st.subheader("📡 Live Security Monitoring")
-
-    if monitoring_enabled:
-        st.success("🟢 Security monitoring is active.")
-    else:
-        st.warning("🟡 Security monitoring is paused.")
-
     st.caption(
-        "Last dashboard check: "
+        "Last checked: "
         + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
 
     # ======================================
-    # New Security Alerts
+    # Alert Status Metrics
     # ======================================
 
-    st.subheader("🚨 Live Security Alerts")
+    history = st.session_state.alert_history
+
+    new_alerts = [
+        item for item in history.values()
+        if item["Status"] == "New"
+    ]
+
+    acknowledged_alerts = [
+        item for item in history.values()
+        if item["Status"] == "Acknowledged"
+    ]
+
+    st.divider()
+    st.subheader("🚨 Security Alert Center")
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric("New Alerts", len(new_alerts))
+    col2.metric(
+        "Acknowledged Alerts",
+        len(acknowledged_alerts),
+    )
+    col3.metric("Total Recorded Alerts", len(history))
+
+    # ======================================
+    # Unreviewed Alerts
+    # ======================================
 
     if new_alerts:
-        for alert in new_alerts:
-            ip = alert.get("ip_address", "Unknown")
-            attempts = alert.get("failed_attempts", 0)
-
-            st.error(
-                f"🚨 POTENTIAL BRUTE-FORCE ATTACK! "
-                f"IP: {ip} | Failed Attempts: {attempts}"
-            )
-
-        if sound_enabled:
-            st.audio(
-                "https://actions.google.com/sounds/v1/alarms/beep_short.ogg",
-                autoplay=True,
-            )
-
-    elif alerts:
-        st.warning(
-            f"⚠️ {len(alerts)} existing security alert(s) "
-            "detected in the current log."
+        st.error(
+            f"🚨 {len(new_alerts)} security alert(s) "
+            "require investigation."
         )
+
+        for item in reversed(new_alerts):
+
+            with st.container(border=True):
+
+                st.markdown(
+                    f"**🚨 Potential Attack — "
+                    f"{item['IP Address']}**"
+                )
+
+                st.write(
+                    f"Attack Type: {item['Attack Type']}"
+                )
+
+                st.write(
+                    f"Failed Attempts: "
+                    f"{item['Failed Attempts']}"
+                )
+
+                st.write(
+                    f"Severity: {item['Severity']}"
+                )
+
+                st.write(
+                    f"Detected At: {item['Detected At']}"
+                )
+
+                if st.button(
+                    "✅ Acknowledge Alert",
+                    key=f"ack_{item['ID']}",
+                ):
+                    acknowledge_alert(item["ID"])
+                    st.rerun(scope="fragment")
+
     else:
-        st.success("✅ No suspicious activity detected.")
+        st.success(
+            "✅ No unreviewed security alerts."
+        )
 
     # ======================================
-    # IP Filter
+    # Security Overview
     # ======================================
+
+    st.divider()
+    st.subheader("📊 Security Overview")
 
     ip_options = ["All IPs"] + sorted(failed_logins.keys())
 
     selected_ip = st.selectbox(
         "Filter by IP Address",
-        ip_options,
+        options=ip_options,
         key="live_ip_filter",
     )
 
@@ -253,35 +347,36 @@ def security_monitor():
         filtered_logins = {
             selected_ip: failed_logins[selected_ip]
         }
+
         filtered_alerts = [
-            alert
-            for alert in alerts
+            alert for alert in alerts
             if alert["ip_address"] == selected_ip
         ]
 
-    # ======================================
-    # Security Overview
-    # ======================================
-
-    st.divider()
-    st.subheader("📊 Security Overview")
-
     total_failed = sum(
-        len(times) for times in filtered_logins.values()
+        len(times)
+        for times in filtered_logins.values()
     )
 
-    col1, col2, col3, col4 = st.columns(4)
+    overview1, overview2, overview3 = st.columns(3)
 
-    col1.metric("Failed Login Attempts", total_failed)
-    col2.metric("IP Addresses", len(filtered_logins))
-    col3.metric("Security Alerts", len(filtered_alerts))
-    col4.metric(
-        "Alert History",
-        len(st.session_state.alert_history),
+    overview1.metric(
+        "Failed Login Attempts",
+        total_failed,
+    )
+
+    overview2.metric(
+        "IP Addresses",
+        len(filtered_logins),
+    )
+
+    overview3.metric(
+        "Current Security Alerts",
+        len(filtered_alerts),
     )
 
     # ======================================
-    # Failed Attempts Chart
+    # Failed Login Chart
     # ======================================
 
     st.divider()
@@ -312,7 +407,10 @@ def security_monitor():
     st.subheader("🕒 Failed Login Timeline")
 
     timeline_rows = [
-        {"Time": timestamp, "IP": ip}
+        {
+            "Time": timestamp,
+            "IP": ip,
+        }
         for ip, times in filtered_logins.items()
         for timestamp in times
     ]
@@ -331,15 +429,16 @@ def security_monitor():
         )
 
         st.line_chart(timeline_counts)
+
     else:
         st.info("No timeline data available.")
 
     # ======================================
-    # Risk Scoring
+    # Risk Assessment
     # ======================================
 
     st.divider()
-    st.subheader("🧠 Threat Intelligence & Risk Scoring")
+    st.subheader("🧠 IP Risk Assessment")
 
     risk_data = []
 
@@ -380,12 +479,13 @@ def security_monitor():
             use_container_width=True,
             hide_index=True,
         )
+
     else:
-        st.info("No IP addresses to assess.")
+        st.info("No IP risk data available.")
 
     st.caption(
         "Risk scores are behavior-based estimates, "
-        "not external IP reputation scores."
+        "not external threat intelligence scores."
     )
 
     # ======================================
@@ -393,7 +493,7 @@ def security_monitor():
     # ======================================
 
     st.divider()
-    st.subheader("🚨 Current Security Alerts")
+    st.subheader("🔎 Detected Security Alerts")
 
     if filtered_alerts:
         st.dataframe(
@@ -411,21 +511,24 @@ def security_monitor():
     st.divider()
     st.subheader("📋 Security Alert History")
 
-    if st.session_state.alert_history:
-        history_df = pd.DataFrame(
-            st.session_state.alert_history
-        )
+    history_df = get_alert_dataframe()
 
+    if not history_df.empty:
         st.dataframe(
-            history_df.iloc[::-1],
+            history_df,
             use_container_width=True,
             hide_index=True,
         )
     else:
-        st.info("No alerts recorded in this session.")
+        st.info("No security alerts recorded yet.")
+
+    st.caption(
+        "Alert history and acknowledgement status "
+        "are stored only in the current Streamlit session."
+    )
 
     # ======================================
-    # Report Export
+    # Export Reports
     # ======================================
 
     st.divider()
@@ -454,10 +557,10 @@ def security_monitor():
         )
 
 
-# Run monitoring fragment
 security_monitor()
 
 st.divider()
+
 st.caption(
     "Cybersecurity Log Analyzer | Python + Streamlit"
 )
