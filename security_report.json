@@ -1,0 +1,10 @@
+[
+    {
+        "ip_address": "192.168.1.10",
+        "attack_type": "Possible Brute Force",
+        "failed_attempts": 3,
+        "first_attempt": "2026-10-08T10:00:00",
+        "last_attempt": "2026-10-08T10:00:30",
+        "severity": "HIGH"
+    }
+]
