@@ -7,6 +7,7 @@ import pandas as pd
 import streamlit as st
 
 from main import read_security_logs, analyze_logs
+from threat_intelligence import assess_ip_risk
 
 
 BASE_DIR = Path(__file__).parent
@@ -40,9 +41,7 @@ div[data-testid="stMetricValue"] {
 """, unsafe_allow_html=True)
 
 st.title("🛡️ Cybersecurity SOC Dashboard")
-st.caption("Security Log Analysis | Threat Detection | Monitoring")
-
-st.divider()
+st.caption("Security Monitoring | Threat Detection | Risk Scoring")
 
 st.sidebar.header("⚙️ Dashboard Controls")
 
@@ -58,9 +57,11 @@ try:
             temp_path = Path(temp_dir) / "uploaded.log"
             temp_path.write_bytes(uploaded_file.getvalue())
             failed_logins = read_security_logs(temp_path)
+
         st.sidebar.success("Log uploaded successfully!")
     else:
         failed_logins = read_security_logs(LOG_FILE)
+
 except (OSError, UnicodeError) as error:
     st.error(f"Unable to read log file: {error}")
     st.stop()
@@ -86,11 +87,12 @@ else:
         if alert["ip_address"] == selected_ip
     ]
 
+st.divider()
+st.subheader("📊 Security Overview")
+
 total_failed = sum(
     len(times) for times in filtered_logins.values()
 )
-
-st.subheader("📊 Security Overview")
 
 col1, col2, col3 = st.columns(3)
 
@@ -99,7 +101,6 @@ col2.metric("IP Addresses", len(filtered_logins))
 col3.metric("Security Alerts", len(filtered_alerts))
 
 st.divider()
-
 st.subheader("📈 Failed Login Attempts by IP")
 
 chart_data = pd.DataFrame([
@@ -111,14 +112,11 @@ chart_data = pd.DataFrame([
 ])
 
 if not chart_data.empty:
-    st.bar_chart(
-        chart_data.set_index("IP Address")
-    )
+    st.bar_chart(chart_data.set_index("IP Address"))
 else:
     st.info("No failed logins detected.")
 
 st.divider()
-
 st.subheader("🕒 Failed Login Timeline")
 
 timeline_rows = [
@@ -142,7 +140,42 @@ else:
     st.info("No timeline data available.")
 
 st.divider()
+st.subheader("🧠 Threat Intelligence & Risk Scoring")
 
+risk_data = []
+
+for ip, timestamps in filtered_logins.items():
+    assessment = assess_ip_risk(timestamps)
+
+    risk_data.append({
+        "IP Address": ip,
+        "Failed Attempts": len(timestamps),
+        "Risk Level": assessment["risk_level"],
+        "Risk Score": assessment["risk_score"],
+        "Reason": assessment["reason"]
+    })
+
+if risk_data:
+    risk_df = pd.DataFrame(risk_data)
+    risk_df = risk_df.sort_values(
+        "Risk Score",
+        ascending=False
+    )
+
+    st.dataframe(
+        risk_df,
+        use_container_width=True,
+        hide_index=True
+    )
+else:
+    st.info("No IP addresses to assess.")
+
+st.caption(
+    "Risk scores are behavior-based estimates, "
+    "not external threat intelligence reputation scores."
+)
+
+st.divider()
 st.subheader("🚨 Security Alerts")
 
 if filtered_alerts:
@@ -154,7 +187,6 @@ else:
     st.success("No suspicious activity detected.")
 
 st.divider()
-
 st.subheader("📥 Export Security Report")
 
 report_json = json.dumps(
@@ -170,6 +202,7 @@ st.download_button(
     mime="application/json"
 )
 
+st.divider()
 st.caption(
     "Cybersecurity Log Analyzer | Python + Streamlit"
 )
