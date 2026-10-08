@@ -9,29 +9,45 @@ import streamlit as st
 from main import read_security_logs, analyze_logs
 
 
-# Project paths
 BASE_DIR = Path(__file__).parent
 LOG_FILE = BASE_DIR / "security.log"
 
-
-# Dashboard settings
 st.set_page_config(
-    page_title="Cybersecurity Dashboard",
+    page_title="Cybersecurity SOC Dashboard",
     page_icon="🛡️",
     layout="wide"
 )
 
-st.title("🛡️ Cybersecurity Security Dashboard")
-st.caption("Python-Based Security Log Monitoring Tool")
+st.markdown("""
+<style>
+.stApp {
+    background-color: #0b1220;
+    color: #e2e8f0;
+}
+h1, h2, h3 {
+    color: #38bdf8 !important;
+}
+div[data-testid="stMetric"] {
+    background: #172338;
+    border: 1px solid #263b55;
+    border-radius: 12px;
+    padding: 18px;
+}
+div[data-testid="stMetricValue"] {
+    color: #38bdf8;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.title("🛡️ Cybersecurity SOC Dashboard")
+st.caption("Security Log Analysis | Threat Detection | Monitoring")
 
 st.divider()
 
+st.sidebar.header("⚙️ Dashboard Controls")
 
-# Upload security logs
-st.subheader("📁 Upload Security Log File")
-
-uploaded_file = st.file_uploader(
-    "Choose a security log file",
+uploaded_file = st.sidebar.file_uploader(
+    "Upload Security Log",
     type=["log", "txt"],
     max_upload_size=10
 )
@@ -42,28 +58,19 @@ try:
             temp_path = Path(temp_dir) / "uploaded.log"
             temp_path.write_bytes(uploaded_file.getvalue())
             failed_logins = read_security_logs(temp_path)
-
-        st.success("Log file uploaded successfully!")
+        st.sidebar.success("Log uploaded successfully!")
     else:
         failed_logins = read_security_logs(LOG_FILE)
-
 except (OSError, UnicodeError) as error:
-    st.error(f"Could not read security logs: {error}")
+    st.error(f"Unable to read log file: {error}")
     st.stop()
 
-
-# Analyze logs
 alerts = analyze_logs(failed_logins)
-
-
-# Interactive IP filter
-st.divider()
-st.subheader("🔎 Filter by IP Address")
 
 ip_options = ["All IPs"] + sorted(failed_logins.keys())
 
-selected_ip = st.selectbox(
-    "Select an IP Address",
+selected_ip = st.sidebar.selectbox(
+    "Filter by IP",
     ip_options
 )
 
@@ -79,36 +86,28 @@ else:
         if alert["ip_address"] == selected_ip
     ]
 
-
-# Security overview
 total_failed = sum(
-    len(timestamps)
-    for timestamps in filtered_logins.values()
+    len(times) for times in filtered_logins.values()
 )
 
-total_ips = len(filtered_logins)
-total_alerts = len(filtered_alerts)
-
-st.divider()
 st.subheader("📊 Security Overview")
 
 col1, col2, col3 = st.columns(3)
 
 col1.metric("Failed Login Attempts", total_failed)
-col2.metric("IP Addresses", total_ips)
-col3.metric("Security Alerts", total_alerts)
+col2.metric("IP Addresses", len(filtered_logins))
+col3.metric("Security Alerts", len(filtered_alerts))
 
-
-# Failed attempts chart
 st.divider()
+
 st.subheader("📈 Failed Login Attempts by IP")
 
 chart_data = pd.DataFrame([
     {
         "IP Address": ip,
-        "Failed Attempts": len(timestamps)
+        "Failed Attempts": len(times)
     }
-    for ip, timestamps in filtered_logins.items()
+    for ip, times in filtered_logins.items()
 ])
 
 if not chart_data.empty:
@@ -116,27 +115,47 @@ if not chart_data.empty:
         chart_data.set_index("IP Address")
     )
 else:
-    st.info("No failed login attempts found.")
+    st.info("No failed logins detected.")
 
-
-# Security alerts
 st.divider()
+
+st.subheader("🕒 Failed Login Timeline")
+
+timeline_rows = [
+    {"Time": timestamp, "IP": ip}
+    for ip, times in filtered_logins.items()
+    for timestamp in times
+]
+
+if timeline_rows:
+    timeline_df = pd.DataFrame(timeline_rows)
+    timeline_df["Minute"] = timeline_df["Time"].dt.floor("min")
+
+    timeline_counts = (
+        timeline_df.groupby("Minute")
+        .size()
+        .rename("Failed Attempts")
+    )
+
+    st.line_chart(timeline_counts)
+else:
+    st.info("No timeline data available.")
+
+st.divider()
+
 st.subheader("🚨 Security Alerts")
 
 if filtered_alerts:
-    alerts_df = pd.DataFrame(filtered_alerts)
-
     st.dataframe(
-        alerts_df,
+        pd.DataFrame(filtered_alerts),
         use_container_width=True
     )
 else:
     st.success("No suspicious activity detected.")
 
-
-# Download JSON report
 st.divider()
-st.subheader("📥 Download Security Report")
+
+st.subheader("📥 Export Security Report")
 
 report_json = json.dumps(
     filtered_alerts,
@@ -145,16 +164,12 @@ report_json = json.dumps(
 )
 
 st.download_button(
-    label="Download JSON Report",
+    "Download JSON Report",
     data=report_json,
     file_name="security_report.json",
     mime="application/json"
 )
 
-
-# Footer
-st.divider()
 st.caption(
-    "Educational Cybersecurity Project | "
-    "Developed with Python and Streamlit"
+    "Cybersecurity Log Analyzer | Python + Streamlit"
 )
