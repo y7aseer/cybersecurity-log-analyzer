@@ -10,7 +10,6 @@ import streamlit as st
 from main import read_security_logs, analyze_logs
 from threat_intelligence import assess_ip_risk
 from report_export import export_alerts_json, export_risk_csv
-
 from database import (
     init_database,
     save_alert,
@@ -124,7 +123,7 @@ def load_security_data(uploaded_file):
 
 def register_alerts(alerts, source_id):
     """
-    Save detected alerts permanently to SQLite.
+    Save detected alerts to SQLite.
     Existing acknowledged alerts are not reset.
     """
 
@@ -184,7 +183,7 @@ def show_saved_alerts():
     counts = get_alert_counts()
 
     st.divider()
-    st.subheader("🚨 Persistent Security Alert Center")
+    st.subheader("Persistent Security Alert Center")
 
     col1, col2, col3 = st.columns(3)
 
@@ -212,7 +211,7 @@ def show_saved_alerts():
     if new_alerts:
 
         st.error(
-            f"🚨 {len(new_alerts)} security alert(s) "
+            f"{len(new_alerts)} security alert(s) "
             "require investigation."
         )
 
@@ -221,7 +220,7 @@ def show_saved_alerts():
             with st.container(border=True):
 
                 st.markdown(
-                    f"**🚨 Potential Attack — "
+                    f"**Potential Attack — "
                     f"{alert['ip_address']}**"
                 )
 
@@ -243,7 +242,7 @@ def show_saved_alerts():
                 )
 
                 if st.button(
-                    "✅ Acknowledge Alert",
+                    "Acknowledge Alert",
                     key=f"ack_{alert['id']}",
                 ):
 
@@ -252,16 +251,15 @@ def show_saved_alerts():
                     st.rerun(scope="fragment")
 
     else:
+
         st.success(
-            "✅ No unreviewed security alerts."
+            "No unreviewed security alerts."
         )
 
-    # ======================================
     # Persistent Alert History
-    # ======================================
 
     st.divider()
-    st.subheader("📋 Persistent Alert History")
+    st.subheader("Persistent Alert History")
 
     history_df = get_history_dataframe(
         saved_alerts
@@ -276,13 +274,14 @@ def show_saved_alerts():
         )
 
     else:
+
         st.info(
             "No saved security alerts yet."
         )
 
     st.caption(
         "Alerts and acknowledgement status "
-        "are saved permanently in SQLite."
+        "are stored in SQLite."
     )
 
 
@@ -290,13 +289,13 @@ def show_saved_alerts():
 # Sidebar
 # ==========================================
 
-st.title("🛡️ Cybersecurity SOC Dashboard")
+st.title("Cybersecurity SOC Dashboard")
 
 st.caption(
     "Security Monitoring | Threat Detection | SQLite"
 )
 
-st.sidebar.header("⚙️ Dashboard Controls")
+st.sidebar.header("Dashboard Controls")
 
 uploaded_file = st.sidebar.file_uploader(
     "Upload Security Log",
@@ -304,7 +303,7 @@ uploaded_file = st.sidebar.file_uploader(
 )
 
 monitoring_enabled = st.sidebar.toggle(
-    "🔄 Automatic Monitoring",
+    "Automatic Monitoring",
     key="monitoring_enabled",
 )
 
@@ -316,6 +315,7 @@ refresh_seconds = st.sidebar.selectbox(
 )
 
 if uploaded_file is not None:
+
     st.sidebar.info(
         "Uploaded files are static snapshots. "
         "Use security.log for continuously changing logs."
@@ -324,14 +324,14 @@ if uploaded_file is not None:
 if monitoring_enabled:
 
     st.sidebar.success(
-        f"🟢 Monitoring Active — Every "
+        f"Monitoring Active — Every "
         f"{refresh_seconds} seconds"
     )
 
 else:
 
     st.sidebar.warning(
-        "🟡 Monitoring Paused"
+        "Monitoring Paused"
     )
 
 
@@ -356,16 +356,14 @@ def security_monitor():
     if not monitoring_enabled:
 
         st.warning(
-            "🟡 Monitoring paused. "
+            "Monitoring paused. "
             "Saved alerts remain available."
         )
 
         show_saved_alerts()
         return
 
-    # ======================================
     # Read Security Logs
-    # ======================================
 
     try:
 
@@ -382,9 +380,7 @@ def security_monitor():
         show_saved_alerts()
         return
 
-    # ======================================
     # Detect Attacks
-    # ======================================
 
     alerts = analyze_logs(
         failed_logins
@@ -408,7 +404,7 @@ def security_monitor():
     )
 
     st.success(
-        f"🟢 Monitoring Active — "
+        f"Monitoring Active — "
         f"Every {refresh_seconds} seconds"
     )
 
@@ -422,13 +418,11 @@ def security_monitor():
     if newly_saved > 0:
 
         st.error(
-            f"🚨 {newly_saved} new security "
+            f"{newly_saved} new security "
             "alert(s) saved to SQLite!"
         )
 
-    # ======================================
     # Persistent Alerts
-    # ======================================
 
     show_saved_alerts()
 
@@ -437,7 +431,7 @@ def security_monitor():
     # ======================================
 
     st.divider()
-    st.subheader("📊 Security Overview")
+    st.subheader("Security Overview")
 
     ip_options = [
         "All IPs"
@@ -491,92 +485,11 @@ def security_monitor():
     )
 
     # ======================================
-    # Failed Login Chart
-    # ======================================
-
-    st.divider()
-    st.subheader(
-        "📈 Failed Login Attempts by IP"
-    )
-
-    chart_data = pd.DataFrame(
-        [
-            {
-                "IP Address": ip,
-                "Failed Attempts": len(times),
-            }
-            for ip, times in filtered_logins.items()
-        ]
-    )
-
-    if not chart_data.empty:
-
-        st.bar_chart(
-            chart_data.set_index(
-                "IP Address"
-            )
-        )
-
-    else:
-
-        st.info(
-            "No failed login attempts found."
-        )
-
-    # ======================================
-    # Timeline
-    # ======================================
-
-    st.divider()
-    st.subheader(
-        "🕒 Failed Login Timeline"
-    )
-
-    timeline_rows = [
-        {
-            "Time": timestamp,
-            "IP": ip,
-        }
-        for ip, times in filtered_logins.items()
-        for timestamp in times
-    ]
-
-    if timeline_rows:
-
-        timeline_df = pd.DataFrame(
-            timeline_rows
-        )
-
-        timeline_df["Minute"] = (
-            pd.to_datetime(
-                timeline_df["Time"]
-            ).dt.floor("min")
-        )
-
-        timeline_counts = (
-            timeline_df.groupby("Minute")
-            .size()
-            .rename("Failed Attempts")
-        )
-
-        st.line_chart(
-            timeline_counts
-        )
-
-    else:
-
-        st.info(
-            "No timeline data available."
-        )
-
-    # ======================================
     # IP Risk Assessment
     # ======================================
 
     st.divider()
-    st.subheader(
-        "🧠 IP Risk Assessment"
-    )
+    st.subheader("IP Risk Assessment")
 
     risk_data = []
 
@@ -638,9 +551,7 @@ def security_monitor():
     # ======================================
 
     st.divider()
-    st.subheader(
-        "🔎 Detected Security Alerts"
-    )
+    st.subheader("Detected Security Alerts")
 
     if filtered_alerts:
 
@@ -663,16 +574,14 @@ def security_monitor():
     # ======================================
 
     st.divider()
-    st.subheader(
-        "📥 Export Security Reports"
-    )
+    st.subheader("Export Security Reports")
 
     col_json, col_csv = st.columns(2)
 
     with col_json:
 
         st.download_button(
-            label="📄 Download JSON Report",
+            label="Download JSON Report",
             data=export_alerts_json(
                 filtered_alerts
             ),
@@ -684,7 +593,7 @@ def security_monitor():
     with col_csv:
 
         st.download_button(
-            label="📊 Download CSV Risk Report",
+            label="Download CSV Risk Report",
             data=export_risk_csv(
                 risk_df.to_dict(
                     orient="records"
